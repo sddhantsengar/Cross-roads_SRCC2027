@@ -1,3 +1,4 @@
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzlfUOdxa-ig1yNTLuvXNrlQXvlSVvR5yA0BqRgZ2W7KbfwiI0eJxV3Gf6Yo0Xcu_rm/exec";
 /* ---------- DATA ---------- */
 const DOMAINS = [
   {id:"core",  label:"Core",   desc:"Run the backbone of the event"},
@@ -156,11 +157,23 @@ $("#form").addEventListener("submit",async e=>{
     document.querySelector(".invalid")?.scrollIntoView({behavior:"smooth",block:"center"});
     return;
   }
-  const payload=buildPayload();
-  // TODO: send `payload` to Google Sheets here once the script is ready.
-  console.log("Application data:",payload);
-  try{sessionStorage.removeItem(DRAFT);}catch(e){}
-  showDone(payload);
+   const btn=$("#submit");
+  btn.disabled=true; btn.textContent="Submitting…";
+  try{
+    const payload=buildPayload();
+    const r=await fetch(SHEET_URL,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(payload)
+    });
+    const out=await r.json();
+    if(!out.ok) throw new Error(out.error||"Could not save your application");
+    try{sessionStorage.removeItem(DRAFT);}catch(e){}
+    showDone(payload);
+  }catch(err){
+    btn.disabled=false; btn.textContent="Submit application";
+    alert("Couldn't submit: "+err.message+". Please try again.");
+  }
 });
 
 function showDone(p){
